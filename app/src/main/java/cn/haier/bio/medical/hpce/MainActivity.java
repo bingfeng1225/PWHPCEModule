@@ -92,6 +92,11 @@ public class MainActivity extends AppCompatActivity implements IPCEListener {
     }
 
     @Override
+    public void onPCEReady() {
+        PWLogger.debug("onPCEReady");
+    }
+
+    @Override
     public void onPCEConnected() {
         PWLogger.debug("onPCEConnected");
     }

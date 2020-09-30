@@ -1,6 +1,7 @@
 package cn.haier.bio.medical.pce;
 
 public interface IPCEListener {
+    void onPCEReady();
     void onPCEConnected();
     void onPCESwitchWriteModel();
     void onPCESwitchReadModel();

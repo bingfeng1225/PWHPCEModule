@@ -20,6 +20,7 @@ class PCESerialPort implements PWSerialPortListener {
     private HandlerThread thread;
     private PWSerialPortHelper helper;
 
+    private boolean ready = false;
     private boolean enabled = false;
     private WeakReference<IPCEListener> listener;
 
@@ -182,6 +183,7 @@ class PCESerialPort implements PWSerialPortListener {
         if (!this.isInitialized() || !helper.equals(this.helper)) {
             return;
         }
+        this.ready = false;
         this.buffer.clear();
         this.switchReadModel();
         if (null != this.listener && null != this.listener.get()) {
@@ -204,6 +206,7 @@ class PCESerialPort implements PWSerialPortListener {
         if (!this.isInitialized() || !helper.equals(this.helper)) {
             return;
         }
+        this.ready = false;
         if (null != this.listener && null != this.listener.get()) {
             this.listener.get().onPCEException(throwable);
         }
@@ -252,6 +255,12 @@ class PCESerialPort implements PWSerialPortListener {
                 continue;
             }
             this.buffer.discardReadBytes();
+            if (!this.ready) {
+                this.ready = true;
+                if (null != this.listener && null != this.listener.get()) {
+                    this.listener.get().onPCEReady();
+                }
+            }
             this.switchWriteModel();
             if (null != this.listener && null != this.listener.get()) {
                 this.listener.get().onPCEPrint("PCESerialPort Recv:" + PCETools.bytes2HexString(data, true, ", "));
