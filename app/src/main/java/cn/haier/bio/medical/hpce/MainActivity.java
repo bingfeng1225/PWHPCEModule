@@ -2,9 +2,9 @@ package cn.haier.bio.medical.hpce;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
-import androidx.appcompat.app.AppCompatActivity;
 import cn.haier.bio.medical.pce.IPCEListener;
 import cn.haier.bio.medical.pce.PCEManager;
 import cn.qd.peiwen.logger.PWLogger;
@@ -15,11 +15,11 @@ import io.netty.buffer.Unpooled;
 
 public class MainActivity extends AppCompatActivity implements IPCEListener {
     //Control
-    private int lockControl = 0;
-    private int powerControl = 0;
-    private int dryingControl = 0;
-    private int movetoControl = 0;
-    private int runningControl = 0;
+    private int lockControl = 0;        //开关机指令     =0关  =1 开
+    private int powerControl = 0;       //电磁锁开关指令  =0关  =1 开
+    private int dryingControl = 0;      //箱体干燥指令    =0关  =1 开
+    private int movetoControl = 0;      //MoveTo跳转指定步骤指令  =0无效（1-MAX）
+    private int runningControl = 0;     //程序执行指令    =0关  =1 开
 
     //Parameters
     private int correctType = 0;
@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements IPCEListener {
     private int cavityMixingCorrect = 125;
     private int sampleMixingCorrect = 135;
     private int ambientCorrect = 110;
+
     private int highAlarmOffset = 115;
     private int lowerAlarmOffset = 120;
     private int doorOpenDelay = 5;
@@ -67,7 +68,6 @@ public class MainActivity extends AppCompatActivity implements IPCEListener {
         PCEManager.getInstance().init(path);
         PCEManager.getInstance().changeListener(this);
         PCEManager.getInstance().enable();
-
     }
 
     @Override
@@ -135,8 +135,6 @@ public class MainActivity extends AppCompatActivity implements IPCEListener {
     @Override
     public byte[] onPCEStatusPackageReceived(byte[] data) {
         PWLogger.debug("onPCEStatusPackageReceived");
-
-
         ByteBuf buf = Unpooled.buffer();
         buf.writeByte(this.makeControl());
         buf.writeByte(0x00);

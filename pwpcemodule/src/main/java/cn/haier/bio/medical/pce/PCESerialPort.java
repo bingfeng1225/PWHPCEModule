@@ -71,7 +71,7 @@ class PCESerialPort implements PWSerialPortListener {
     private void createHelper(String path) {
         if (this.helper == null) {
             this.helper = new PWSerialPortHelper("PCESerialPort");
-//            this.helper.setTimeout(60);
+            this.helper.setTimeout(10);
             this.helper.setPath(path);
             this.helper.setBaudrate(9600);
             this.helper.init(this);
@@ -137,16 +137,20 @@ class PCESerialPort implements PWSerialPortListener {
     }
 
     private boolean ignorePackage() {
-        boolean result = false;
         int index = PCETools.indexOf(this.buffer, PCETools.HEADER);
+        byte[] data = null;
+        boolean result = false;
         if (index != -1) {
             result = true;
-            byte[] data = new byte[index];
-            this.buffer.readBytes(data, 0, data.length);
-            this.buffer.discardReadBytes();
-            if (null != this.listener && null != this.listener.get()) {
-                this.listener.get().onPCEPrint("PCESerialPort 指令丢弃:" + PCETools.bytes2HexString(data, true, ", "));
-            }
+            data = new byte[index];
+        } else {
+            result = false;
+            data = new byte[this.buffer.readableBytes() - PCETools.HEADER.length];
+        }
+        this.buffer.readBytes(data, 0, data.length);
+        this.buffer.discardReadBytes();
+        if (null != this.listener && null != this.listener.get()) {
+            this.listener.get().onPCEPrint("PCESerialPort 指令丢弃:" + PCETools.bytes2HexString(data, true, ", "));
         }
         return result;
     }
@@ -172,7 +176,7 @@ class PCESerialPort implements PWSerialPortListener {
         }
 
         if (null != response && response.length > 0) {
-            byte[] buffer = PCETools.packageResponse(command,response);
+            byte[] buffer = PCETools.packageResponse(command, response);
             this.write(buffer);
         }
         this.switchReadModel();
@@ -221,27 +225,22 @@ class PCESerialPort implements PWSerialPortListener {
             this.listener.get().onPCEPrint("PCESerialPort state changed: " + state.name());
         }
     }
-
     @Override
-    public void onByteReceived(PWSerialPortHelper helper, byte[] buffer, int length) throws IOException {
+    public boolean onByteReceived(PWSerialPortHelper helper, byte[] buffer, int length) throws IOException {
         if (!this.isInitialized() || !helper.equals(this.helper)) {
-            return;
+            return false;
         }
         this.buffer.writeBytes(buffer, 0, length);
-        while (this.buffer.readableBytes() >= 4) {
+        if (this.buffer.readableBytes() >= 4) {
             byte[] header = new byte[PCETools.HEADER.length];
             this.buffer.getBytes(0, header);
             byte command = this.buffer.getByte(3);
             if (!PCETools.checkHeader(header) || !PCETools.checkCommand(command)) {
-                if (this.ignorePackage()) {
-                    continue;
-                } else {
-                    break;
-                }
+                return this.ignorePackage();
             }
             int frameLength = 0xFF & this.buffer.getByte(2) + 3;
             if (this.buffer.readableBytes() < frameLength) {
-                break;
+                return true;
             }
             this.buffer.markReaderIndex();
             byte[] data = new byte[frameLength];
@@ -252,7 +251,7 @@ class PCESerialPort implements PWSerialPortListener {
                 //当前包不合法 丢掉正常的包头以免重复判断
                 this.buffer.skipBytes(4);
                 this.buffer.discardReadBytes();
-                continue;
+                return false;
             }
             this.buffer.discardReadBytes();
             if (!this.ready) {
@@ -269,7 +268,9 @@ class PCESerialPort implements PWSerialPortListener {
             msg.obj = data;
             msg.what = 0xFF & command;
             this.handler.sendMessage(msg);
+            return true;
         }
+        return false;
     }
 
     private class PCEHandler extends Handler {
