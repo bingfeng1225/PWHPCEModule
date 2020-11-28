@@ -23,33 +23,33 @@ public class PCEManager {
     }
 
     public void init(String path) {
-        if(this.serialPort == null){
+        if (this.serialPort == null) {
             this.serialPort = new PCESerialPort();
             this.serialPort.init(path);
         }
     }
 
     public void enable() {
-        if(null != this.serialPort){
+        if (null != this.serialPort) {
             this.serialPort.enable();
         }
     }
 
     public void disable() {
-        if(null != this.serialPort){
+        if (null != this.serialPort) {
             this.serialPort.disable();
         }
     }
 
     public void release() {
-        if(null != this.serialPort){
+        if (null != this.serialPort) {
             this.serialPort.release();
             this.serialPort = null;
         }
     }
 
     public void changeListener(IPCEListener listener) {
-        if(null != this.serialPort){
+        if (null != this.serialPort) {
             this.serialPort.changeListener(listener);
         }
     }
